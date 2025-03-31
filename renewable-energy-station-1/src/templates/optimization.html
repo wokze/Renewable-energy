@@ -1,0 +1,461 @@
+<!-- src/templates/optimization.html -->
+{% extends "base.html" %}
+
+{% block content %}
+<div class="container py-4">
+    <div class="header-section mb-4">
+        <h1 class="display-4 mb-3">
+            <i class="fas fa-chart-line"></i> Energy Optimization
+        </h1>
+        <p class="lead text-muted">Scenario: {{ scenario.name }}</p>
+    </div>
+    
+    <div class="row">
+        <div class="col-lg-4">
+            <div class="card shadow-sm mb-4">
+                <div class="card-header">
+                    <h4 class="mb-0">Forecast Inputs</h4>
+                </div>
+                <div class="card-body">
+                    <form id="optimization-form">
+                        <div class="mb-3">
+                            <label class="form-label">Forecast Horizon (hours)</label>
+                            <select class="form-select" id="forecast-horizon">
+                                <option value="24" selected>24</option>
+                                <option value="48">48</option>
+                                <option value="72">72</option>
+                            </select>
+                        </div>
+                        
+                        <div class="mb-3">
+                            <label class="form-label">Solar Generation Pattern</label>
+                            <select class="form-select" id="solar-pattern">
+                                <option value="sunny">Sunny Day</option>
+                                <option value="cloudy">Cloudy Day</option>
+                                <option value="mixed" selected>Mixed Conditions</option>
+                            </select>
+                        </div>
+                        
+                        <div class="mb-3">
+                            <label class="form-label">Wind Generation Pattern</label>
+                            <select class="form-select" id="wind-pattern">
+                                <option value="steady">Steady</option>
+                                <option value="gusty" selected>Gusty</option>
+                                <option value="calm">Calm</option>
+                            </select>
+                        </div>
+                        
+                        <div class="mb-3">
+                            <label class="form-label">Demand Pattern</label>
+                            <select class="form-select" id="demand-pattern">
+                                <option value="residential" selected>Residential</option>
+                                <option value="commercial">Commercial</option>
+                                <option value="industrial">Industrial</option>
+                            </select>
+                        </div>
+                        
+                        <div class="mb-3">
+                            <label class="form-label">Demand Type</label>
+                            <select class="form-select" id="demand-type">
+                                <option value="fixed" selected>Fixed Base Load</option>
+                                <option value="daily-variation">Daily Variation</option>
+                            </select>
+                        </div>
+                        
+                        <button type="button" id="run-optimization" class="btn btn-primary w-100">
+                            <i class="fas fa-play"></i> Run Optimization
+                        </button>
+                    </form>
+                </div>
+            </div>
+            
+            <div class="card shadow-sm">
+                <div class="card-header">
+                    <h4 class="mb-0">Scenario Components</h4>
+                </div>
+                <div class="card-body">
+                    <div class="component-summary">
+                        <h5><i class="fas fa-battery-full"></i> Batteries</h5>
+                        <ul class="list-unstyled">
+                            {% for battery in scenario.batteries %}
+                            <li>{{ battery.battery_type }} (x{{ battery.quantity }})</li>
+                            {% endfor %}
+                        </ul>
+                    </div>
+                    
+                    <div class="component-summary">
+                        <h5><i class="fas fa-solar-panel"></i> Solar Panels</h5>
+                        <ul class="list-unstyled">
+                            {% for panel in scenario.solar_panels %}
+                            <li>{{ panel.model_type }} (x{{ panel.quantity }})</li>
+                            {% endfor %}
+                        </ul>
+                    </div>
+                    
+                    <div class="component-summary">
+                        <h5><i class="fas fa-wind"></i> Wind Turbines</h5>
+                        <ul class="list-unstyled">
+                            {% for turbine in scenario.wind_turbines %}
+                            <li>{{ turbine.turbine_type }} (x{{ turbine.quantity }})</li>
+                            {% endfor %}
+                        </ul>
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <div class="col-lg-8">
+            <div class="card shadow-sm mb-4">
+                <div class="card-header">
+                    <h4 class="mb-0">Optimization Results</h4>
+                </div>
+                <div class="card-body">
+                    <div class="results-wrapper" style="height: 400px;">
+                        <canvas id="results-chart"></canvas>
+                    </div>
+                    
+                    <div class="summary-metrics mt-4">
+                        <div class="row text-center">
+                            <div class="col-md-3 mb-3">
+                                <div class="p-3 border rounded">
+                                    <h6 class="text-muted">Self-Consumption</h6>
+                                    <h2 id="self-consumption">-</h2>
+                                </div>
+                            </div>
+                            <div class="col-md-3 mb-3">
+                                <div class="p-3 border rounded">
+                                    <h6 class="text-muted">Grid Exports</h6>
+                                    <h2 id="grid-exports">-</h2>
+                                </div>
+                            </div>
+                            <div class="col-md-3 mb-3">
+                                <div class="p-3 border rounded">
+                                    <h6 class="text-muted">Grid Imports</h6>
+                                    <h2 id="grid-imports">-</h2>
+                                </div>
+                            </div>
+                            <div class="col-md-3 mb-3">
+                                <div class="p-3 border rounded">
+                                    <h6 class="text-muted">Battery Cycles</h6>
+                                    <h2 id="battery-cycles">-</h2>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="card shadow-sm">
+                <div class="card-header">
+                    <h4 class="mb-0">Hourly Dispatch Schedule</h4>
+                </div>
+                <div class="card-body">
+                    <div class="table-responsive">
+                        <table class="table table-sm" id="dispatch-table">
+                            <thead>
+                                <tr>
+                                    <th>Time</th>
+                                    <th>Solar (MWh)</th>
+                                    <th>Wind (MWh)</th>
+                                    <th>Demand (MWh)</th>
+                                    <th>Battery (MWh)</th>
+                                    <th>Grid (MWh)</th>
+                                    <th>Battery SoC (%)</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                <tr>
+                                    <td colspan="7" class="text-center">Run optimization to see results</td>
+                                </tr>
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+<script>
+    // Store all template variables in one place at the top
+    const scenarioData = {
+        id: {{ scenario.id }},
+        solarHours: {{ scenario.location.average_solar_hours }},
+        windSpeed: {{ scenario.location.average_wind_speed }},
+        solarCapacity: {{ scenario.solar_panels|sum(attribute='capacity') * scenario.solar_panels|sum(attribute='quantity') }},
+        windCapacity: {{ scenario.wind_turbines|sum(attribute='capacity') * scenario.wind_turbines|sum(attribute='quantity') }}
+    };
+    
+    let resultsChart = null;
+    
+    document.getElementById('run-optimization').addEventListener('click', runOptimization);
+    
+    function runOptimization() {
+        const horizon = parseInt(document.getElementById('forecast-horizon').value);
+        const solarPattern = document.getElementById('solar-pattern').value;
+        const windPattern = document.getElementById('wind-pattern').value;
+        const demandPattern = document.getElementById('demand-pattern').value;
+        
+        console.log("Running optimization with params:", {horizon, solarPattern, windPattern, demandPattern});
+        
+        // Generate sample forecasts based on patterns
+        const forecasts = generateForecasts(horizon, solarPattern, windPattern, demandPattern);
+        
+        // Send to API - use scenarioData.id instead of template variable
+        fetch(`/optimization/${scenarioData.id}/optimize`, {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json'
+            },
+            body: JSON.stringify(forecasts)
+        })
+        .then(response => {
+            if (!response.ok) {
+                throw new Error(`HTTP error! status: ${response.status}`);
+            }
+            return response.json();
+        })
+        .then(data => {
+            console.log("Received optimization results:", data);
+            displayResults(data);
+        })
+        .catch(error => {
+            console.error('Error running optimization:', error);
+            alert('Error running optimization. See console for details.');
+        });
+    }
+    
+    function generateForecasts(hours, solarPattern, windPattern, demandType) {
+        // Use scenarioData instead of inline template variables
+        const installedSolarCapacity = scenarioData.solarCapacity;
+        const installedWindCapacity = scenarioData.windCapacity;
+        const solarHours = scenarioData.solarHours;
+        const avgWindSpeed = scenarioData.windSpeed;
+        
+        // Solar data generation - use real patterns
+        const solar = Array(hours).fill(0).map((_, i) => {
+            const hour = i % 24;
+            let value = 0;
+            
+            if (solarPattern === 'sunny' && hour >= 6 && hour <= 18) {
+                // Bell curve for sunny day
+                value = Math.sin(Math.PI * (hour - 6) / 12) * installedSolarCapacity;
+            } else if (solarPattern === 'cloudy' && hour >= 6 && hour <= 18) {
+                // Reduced output for cloudy
+                value = Math.sin(Math.PI * (hour - 6) / 12) * 0.3 * installedSolarCapacity;
+            } else if (solarPattern === 'mixed' && hour >= 6 && hour <= 18) {
+                // Variable output with some cloudiness
+                value = Math.sin(Math.PI * (hour - 6) / 12) * (0.4 + Math.random() * 0.6) * installedSolarCapacity;
+            }
+            return Math.max(0, value);
+        });
+        
+        // Wind turbine data - use power curves from config
+        const wind = Array(hours).fill(0).map(() => {
+            let windSpeed;
+            
+            if (windPattern === 'steady') {
+                windSpeed = avgWindSpeed * (0.9 + Math.random() * 0.2);
+            } else if (windPattern === 'gusty') {
+                windSpeed = avgWindSpeed * (0.5 + Math.random() * 1.0);
+            } else if (windPattern === 'calm') {
+                windSpeed = avgWindSpeed * 0.5 * (0.8 + Math.random() * 0.4);
+            }
+            
+            // Power curve approximation: cubic relation until rated speed, then flat
+            let powerFactor = 0;
+            if (windSpeed >= 3 && windSpeed <= 12) {
+                // Approximate cubic relationship from cut-in to rated speed
+                powerFactor = Math.pow((windSpeed - 3) / 9, 3);
+            } else if (windSpeed > 12 && windSpeed <= 25) {
+                powerFactor = 1.0; // Full output between rated and cut-out
+            }
+            
+            return installedWindCapacity * powerFactor;
+        });
+        
+        // Demand using TILOS approach
+        const baseLoad = (installedSolarCapacity + installedWindCapacity) * 0.6; // 60% of total capacity
+        const demand = Array(hours).fill(0).map((_, i) => {
+            const hour = i % 24;
+            
+            if (demandType === 'fixed') {
+                return baseLoad;
+            } else {
+                // Simple day/night variation
+                return baseLoad * (0.7 + 0.5 * (hour >= 8 && hour <= 20 ? 1 : 0));
+            }
+        });
+        
+        return {
+            solar_forecast: solar,
+            wind_forecast: wind,
+            demand_forecast: demand
+        };
+    }
+    
+    function displayResults(data) {
+        // Update chart
+        updateChart(data);
+        
+        // Update summary metrics
+        const totalDemand = data.demand.reduce((a, b) => a + b, 0);
+        const gridImports = data.grid_exchange.filter(v => v > 0).reduce((a, b) => a + b, 0);
+        const gridExports = data.grid_exchange.filter(v => v < 0).reduce((a, b) => a - b, 0);
+        const selfConsumption = ((totalDemand - gridImports) / totalDemand * 100).toFixed(1);
+        
+        let cycleCount = 0;
+        let charging = false;
+        for (let i = 0; i < data.battery_dispatch.length; i++) {
+            if (data.battery_dispatch[i] < 0 && !charging) {
+                charging = true;
+            } else if (data.battery_dispatch[i] > 0 && charging) {
+                charging = false;
+                cycleCount += 0.5; // Half cycle complete
+            }
+        }
+        
+        document.getElementById('self-consumption').textContent = selfConsumption + '%';
+        document.getElementById('grid-exports').textContent = gridExports.toFixed(2) + ' MWh';
+        document.getElementById('grid-imports').textContent = gridImports.toFixed(2) + ' MWh';
+        document.getElementById('battery-cycles').textContent = cycleCount.toFixed(1);
+        
+        // Update dispatch table
+        updateDispatchTable(data);
+    }
+    
+    function updateChart(data) {
+        const ctx = document.getElementById('results-chart').getContext('2d');
+        
+        // Destroy existing chart if it exists
+        if (resultsChart) {
+            resultsChart.destroy();
+        }
+        
+        // Format timestamps for display (e.g., "14:00")
+        const labels = data.timestamps.map(timestamp => {
+            const date = new Date(timestamp);
+            return date.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+        });
+        
+        // Prepare datasets
+        const solarData = data.renewable_generation.map((_, i) => data.solar_forecast ? data.solar_forecast[i] : 0);
+        const windData = data.renewable_generation.map((_, i) => data.wind_forecast ? data.wind_forecast[i] : 0);
+        
+        resultsChart = new Chart(ctx, {
+            type: 'bar',
+            data: {
+                labels: labels,
+                datasets: [
+                    {
+                        label: 'Solar',
+                        data: solarData,
+                        backgroundColor: 'rgba(255, 193, 7, 0.6)',
+                        stack: 'generation'
+                    },
+                    {
+                        label: 'Wind',
+                        data: windData,
+                        backgroundColor: 'rgba(23, 162, 184, 0.6)',
+                        stack: 'generation'
+                    },
+                    {
+                        label: 'Battery Discharge',
+                        data: data.battery_dispatch.map(v => v > 0 ? v : 0),
+                        backgroundColor: 'rgba(40, 167, 69, 0.6)',
+                        stack: 'generation'
+                    },
+                    {
+                        label: 'Grid Import',
+                        data: data.grid_exchange.map(v => v > 0 ? v : 0),
+                        backgroundColor: 'rgba(220, 53, 69, 0.6)',
+                        stack: 'generation'
+                    },
+                    {
+                        label: 'Demand',
+                        data: data.demand,
+                        type: 'line',
+                        borderColor: 'rgba(0, 0, 0, 0.7)',
+                        borderWidth: 2,
+                        fill: false,
+                        tension: 0.1
+                    },
+                    {
+                        label: 'Battery SoC',
+                        data: data.battery_soc.slice(0, -1).map(v => v / Math.max(...data.battery_soc) * 100),
+                        type: 'line',
+                        borderColor: 'rgba(128, 0, 128, 0.7)',
+                        borderWidth: 2,
+                        fill: false,
+                        tension: 0.1,
+                        yAxisID: 'y1'
+                    }
+                ]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                scales: {
+                    x: {
+                        stacked: true
+                    },
+                    y: {
+                        stacked: true,
+                        title: {
+                            display: true,
+                            text: 'Power (MWh)'
+                        }
+                    },
+                    y1: {
+                        position: 'right',
+                        title: {
+                            display: true,
+                            text: 'Battery SoC (%)'
+                        },
+                        min: 0,
+                        max: 100
+                    }
+                }
+            }
+        });
+    }
+    
+    function updateDispatchTable(data) {
+        const tbody = document.querySelector('#dispatch-table tbody');
+        tbody.innerHTML = '';
+        
+        for (let i = 0; i < data.timestamps.length; i++) {
+            const date = new Date(data.timestamps[i]);
+            const time = date.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+            
+            const row = tbody.insertRow();
+            row.insertCell(0).textContent = time;
+            row.insertCell(1).textContent = data.solar_forecast ? data.solar_forecast[i].toFixed(2) : '0.00';
+            row.insertCell(2).textContent = data.wind_forecast ? data.wind_forecast[i].toFixed(2) : '0.00';
+            row.insertCell(3).textContent = data.demand[i].toFixed(2);
+            
+            const batteryCell = row.insertCell(4);
+            batteryCell.textContent = data.battery_dispatch[i].toFixed(2);
+            if (data.battery_dispatch[i] < 0) {
+                batteryCell.className = 'text-success'; // Charging
+            } else if (data.battery_dispatch[i] > 0) {
+                batteryCell.className = 'text-warning'; // Discharging
+            }
+            
+            const gridCell = row.insertCell(5);
+            gridCell.textContent = data.grid_exchange[i].toFixed(2);
+            if (data.grid_exchange[i] < 0) {
+                gridCell.className = 'text-success'; // Exporting
+            } else if (data.grid_exchange[i] > 0) {
+                gridCell.className = 'text-danger'; // Importing
+            }
+            
+            const socPercent = (data.battery_soc[i] / Math.max(...data.battery_soc) * 100).toFixed(1);
+            row.insertCell(6).textContent = socPercent;
+        }
+    }
+</script>
+{% endblock %}

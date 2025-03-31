@@ -1,0 +1,48 @@
+version: '3.8'
+
+services:
+  web:
+    build:
+      context: .
+      dockerfile: compose/local/flask/Dockerfile
+    ports:
+      - "5000:5000"
+    volumes:
+      - .:/app
+      - ./config:/app/config
+    environment:
+      - FLASK_APP=src/app.py
+      - FLASK_ENV=development
+      - PYTHONPATH=/app/src
+      - DATABASE_URL=postgresql://postgres:postgres@db:5432/renewable_energy
+    depends_on:
+      db:
+        condition: service_healthy
+    networks:
+      - renewable-network
+
+  db:
+    image: timescale/timescaledb:latest-pg14
+    ports:
+      - "5432:5432"
+    environment:
+      - POSTGRES_USER=postgres
+      - POSTGRES_PASSWORD=postgres
+      - POSTGRES_DB=renewable_energy
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+      - ./compose/local/timescaledb/init.sql:/docker-entrypoint-initdb.d/init.sql
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U postgres"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+    networks:
+      - renewable-network
+
+volumes:
+  postgres_data:
+
+networks:
+  renewable-network:
+    driver: bridge

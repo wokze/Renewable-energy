@@ -1,1 +1,2 @@
-# Renewable-energy
+# RES
+RES algorithm

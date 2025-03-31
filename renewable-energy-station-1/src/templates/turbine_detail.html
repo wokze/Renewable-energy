@@ -1,0 +1,171 @@
+{% extends "base.html" %}
+
+{% block content %}
+<div class="turbine-detail">
+    <h1>{{ turbine.model_name }}</h1>
+
+    <div class="turbine-info">
+        <section class="specs">
+            <h2>Specifications</h2>
+            <table>
+                <tr>
+                    <td>Capacity:</td>
+                    <td>{{ turbine.capacity }} MW</td>
+                </tr>
+                <tr>
+                    <td>Manufacturer:</td>
+                    <td>{{ turbine.manufacturer }}</td>
+                </tr>
+                <tr>
+                    <td>Manufactured Date:</td>
+                    <td>{{ turbine.manufactured_date }}</td>
+                </tr>
+                <tr>
+                    <td>Warranty:</td>
+                    <td>{{ turbine.warranty }}</td>
+                </tr>
+                <tr>
+                    <td>Rotor Diameter:</td>
+                    <td>{{ turbine.rotor_diameter }}m</td>
+                </tr>
+                <tr>
+                    <td>Hub Height:</td>
+                    <td>{{ turbine.hub_height }}m</td>
+                </tr>
+                <tr>
+                    <td>Cut-in Speed:</td>
+                    <td>{{ turbine.cut_in_speed }} m/s</td>
+                </tr>
+                <tr>
+                    <td>Cut-out Speed:</td>
+                    <td>{{ turbine.cut_out_speed }} m/s</td>
+                </tr>
+                <tr>
+                    <td>Rated Speed:</td>
+                    <td>{{ turbine.rated_speed }} m/s</td>
+                </tr>
+                <tr>
+                    <td>Temperature Range:</td>
+                    <td>{{ turbine.temperature_range }}</td>
+                </tr>
+                <tr>
+                    <td>Noise Level:</td>
+                    <td>{{ turbine.noise_level }} dB</td>
+                </tr>
+            </table>
+        </section>
+
+        <section class="power-curve">
+            <h2>Power Curve</h2>
+            <table>
+                <tr>
+                    <th>Wind Speed (m/s)</th>
+                    <th>Power Output (%)</th>
+                </tr>
+                {% for speed, power in turbine.power_curve.items() %}
+                <tr>
+                    <td>{{ speed }}</td>
+                    <td>{{ (power * 100)|round(1) }}%</td>
+                </tr>
+                {% endfor %}
+            </table>
+        </section>
+
+        <section class="calculator">
+            <h2>Output Calculator</h2>
+            <div class="form-group">
+                <label for="wind-speed">Wind Speed (m/s):</label>
+                <input type="number" id="wind-speed" value="10" min="0" max="30" step="0.1">
+            </div>
+            <div class="form-group">
+                <label for="temperature">Temperature (°C):</label>
+                <input type="number" id="temperature" value="20" min="-40" max="50">
+            </div>
+            <button onclick="calculateOutput()" class="btn btn-primary">Calculate</button>
+            <div id="output-result" class="result">
+                Expected Output: <span>-</span> MW
+            </div>
+    </div>
+    </section>
+</div>
+
+<div class="actions">
+    <a href="{{ url_for('turbines.list_turbines') }}" class="btn btn-secondary">Back to Turbines</a>
+</div>
+
+<style>
+    .turbine-detail {
+        max-width: 1200px;
+        margin: 0 auto;
+        padding: 20px;
+    }
+
+    .turbine-info {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+        gap: 20px;
+        margin: 20px 0;
+    }
+
+    section {
+        border: 1px solid #ddd;
+        border-radius: 5px;
+        padding: 20px;
+    }
+
+    table {
+        width: 100%;
+        border-collapse: collapse;
+    }
+
+    td,
+    th {
+        padding: 8px;
+        border-bottom: 1px solid #ddd;
+    }
+
+    .calculator {
+        background-color: #f8f9fa;
+        padding: 15px;
+        border-radius: 5px;
+    }
+
+    .form-group {
+        margin-bottom: 15px;
+    }
+
+    .result {
+        margin-top: 15px;
+        font-weight: bold;
+    }
+</style>
+
+<script>
+    function calculateOutput() {
+        const windSpeed = parseFloat(document.getElementById('wind-speed').value);
+        const temperature = parseFloat(document.getElementById('temperature').value);
+        const capacity = {{ turbine.capacity }};
+        const cutInSpeed = {{ turbine.cut_in_speed }};
+        const cutOutSpeed = {{ turbine.cut_out_speed }};
+        const powerCurve = {{ turbine.power_curve|tojson }};
+
+        let output = 0;
+        if (windSpeed >= cutInSpeed && windSpeed <= cutOutSpeed) {
+            // Interpolate from power curve
+            for (const [speed, power] of Object.entries(powerCurve)) {
+                if (parseFloat(speed) > windSpeed) break;
+                // Convert power curve percentage to actual MW output
+                console.log(power, capacity)
+                output = power * capacity;
+            }
+        }
+
+        // Update display with MW output
+        document.querySelector('#output-result span').textContent = 
+            `${output.toFixed(2)}`;
+    }
+
+    // Calculate initial values when page loads
+    document.addEventListener('DOMContentLoaded', calculateOutput);
+</script>
+{% endblock %}

@@ -1,0 +1,242 @@
+{% extends "base.html" %}
+
+{% block content %}
+<div class="scenarios">
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <h1>Energy Scenarios</h1>
+        <a href="{{ url_for('scenarios.create_scenario') }}" class="btn btn-primary">
+            <i class="fas fa-plus"></i> Create New Scenario
+        </a>
+    </div>
+
+    {% if scenarios %}
+    <div class="row">
+        {% for scenario in scenarios %}
+        <div class="col-12 mb-4">
+            <div class="card shadow-sm">
+                <div class="card-body">
+                    <div class="d-flex justify-content-between align-items-start mb-3">
+                        <div>
+                            <h3 class="card-title">{{ scenario.name }}</h3>
+                            <p class="text-muted">{{ scenario.description }}</p>
+                        </div>
+                        <span class="badge {% if scenario.is_active %}bg-success{% else %}bg-danger{% endif %}">
+                            {{ "Active" if scenario.is_active else "Inactive" }}
+                        </span>
+                    </div>
+
+                    <div class="row mb-4">
+                        <!-- Location Info -->
+                        <div class="col-md-6">
+                            <div class="card bg-light">
+                                <div class="card-body">
+                                    <h5 class="card-title">
+                                        <i class="fas fa-map-marker-alt"></i> Location
+                                    </h5>
+                                    <p class="mb-1">{{ scenario.location.name }}</p>
+                                    <p class="mb-1">
+                                        <i class="fas fa-compass"></i> 
+                                        {{ scenario.location.latitude }}, {{ scenario.location.longitude }}
+                                    </p>
+                                    <p class="mb-1">
+                                        <i class="fas fa-sun"></i> 
+                                        {{ scenario.location.average_solar_hours }} solar hours/day
+                                    </p>
+                                    <p class="mb-0">
+                                        <i class="fas fa-wind"></i> 
+                                        {{ scenario.location.average_wind_speed }} m/s
+                                    </p>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Energy Metrics -->
+                        <div class="col-md-6">
+                            <div class="card bg-light">
+                                <div class="card-body">
+                                    <h5 class="card-title">
+                                        <i class="fas fa-chart-line"></i> Energy Metrics
+                                    </h5>
+                                    {% set total_pv = scenario.solar_panels|sum(attribute='capacity') * scenario.solar_panels|sum(attribute='quantity') %}
+                                    {% set total_wind = scenario.wind_turbines|sum(attribute='capacity') * scenario.wind_turbines|sum(attribute='quantity') %}
+                                    <div class="row">
+                                        <div class="col-6">
+                                            <small class="text-muted">Solar Output</small>
+                                            <h6>{{ "%.2f"|format(total_pv * (scenario.location.average_solar_hours/24)) }} MWh</h6>
+                                        </div>
+                                        <div class="col-6">
+                                            <small class="text-muted">Wind Output</small>
+                                            <h6>{{ "%.2f"|format(total_wind) }} MWh</h6>
+                                        </div>
+                                    </div>
+                                    <div class="mt-2 pt-2 border-top">
+                                        <small class="text-muted">Total Generation</small>
+                                        <h5 class="text-success">
+                                            {{ "%.2f"|format(total_pv * (scenario.location.average_solar_hours/24) + total_wind) }} MWh
+                                        </h5>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Components -->
+                    <div class="row g-3">
+                        <!-- Batteries Card (existing) -->
+                        <div class="col-md-3">
+                            <div class="card h-100">
+                                <div class="card-body">
+                                    <h6 class="card-title">
+                                        <i class="fas fa-battery-full"></i> Batteries
+                                    </h6>
+                                    <ul class="list-unstyled">
+                                        {% for battery in scenario.batteries %}
+                                        <li class="d-flex justify-content-between align-items-center">
+                                            <span>{{ battery.battery_type }}</span>
+                                            <span class="badge bg-secondary">x{{ battery.quantity }}</span>
+                                        </li>
+                                        {% endfor %}
+                                        {% if scenario.batteries %}
+                                        <li class="mt-2 pt-2 border-top">
+                                            <small class="text-muted">Total Storage:</small>
+                                            <div class="fw-bold text-success">
+                                                {% set total_storage = namespace(value=0) %}
+                                                {% for battery in scenario.batteries %}
+                                                    {% set battery_obj = battery_factory.create_battery(battery.battery_type) %}
+                                                    {% set total_storage.value = total_storage.value + (battery_obj.capacity * battery.quantity) %}
+                                                {% endfor %}
+                                                {{ "%.1f"|format(total_storage.value) }} GWh
+                                            </div>
+                                        </li>
+                                        {% endif %}
+                                    </ul>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Solar Panels Card -->
+                        <div class="col-md-3">
+                            <div class="card h-100">
+                                <div class="card-body">
+                                    <h6 class="card-title">
+                                        <i class="fas fa-solar-panel"></i> Solar Panels
+                                    </h6>
+                                    <ul class="list-unstyled">
+                                        {% for panel in scenario.solar_panels %}
+                                        <li class="d-flex justify-content-between align-items-center">
+                                            <span>{{ panel.model_type }}</span>
+                                            <span class="badge bg-secondary">x{{ panel.quantity }}</span>
+                                        </li>
+                                        {% endfor %}
+                                        {% if scenario.solar_panels %}
+                                        <li class="mt-2 pt-2 border-top">
+                                            <small class="text-muted">Max Output:</small>
+                                            <div class="fw-bold text-success">
+                                                {{ "%.1f"|format(total_pv) }} MWh/day
+                                            </div>
+                                        </li>
+                                        {% endif %}
+                                    </ul>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Wind Turbines Card -->
+                        <div class="col-md-3">
+                            <div class="card h-100">
+                                <div class="card-body">
+                                    <h6 class="card-title">
+                                        <i class="fas fa-wind"></i> Wind Turbines
+                                    </h6>
+                                    <ul class="list-unstyled">
+                                        {% for turbine in scenario.wind_turbines %}
+                                        <li class="d-flex justify-content-between align-items-center">
+                                            <span>{{ turbine.turbine_type }}</span>
+                                            <span class="badge bg-secondary">x{{ turbine.quantity }}</span>
+                                        </li>
+                                        {% endfor %}
+                                        {% if scenario.wind_turbines %}
+                                        <li class="mt-2 pt-2 border-top">
+                                            <small class="text-muted">Max Output:</small>
+                                            <div class="fw-bold text-success">
+                                                {{ "%.1f"|format(total_wind) }} MWh/hr
+                                            </div>
+                                        </li>
+                                        {% endif %}
+                                    </ul>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Grid Card -->
+                        <div class="col-md-3">
+                            <div class="card h-100">
+                                <div class="card-body">
+                                    <h6 class="card-title">
+                                        <i class="fas fa-plug"></i> Grid Connection
+                                    </h6>
+                                    <ul class="list-unstyled">
+                                        {% for grid in scenario.grid_connections %}
+                                        <li>
+                                            <div class="mb-2">
+                                                <strong>{{ grid.grid_id }}</strong>
+                                            </div>
+                                            <div class="small">
+                                                <div class="d-flex justify-content-between">
+                                                    <span>Base Capacity:</span>
+                                                    <span>{{ grid.capacity }} MW</span>
+                                                </div>
+                                                {% if grid.flexible_capacity %}
+                                                <div class="d-flex justify-content-between">
+                                                    <span>Flexible Capacity:</span>
+                                                    <span>{{ grid.flexible_capacity }} MW</span>
+                                                </div>
+                                                <div class="d-flex justify-content-between mt-2 pt-2 border-top">
+                                                    <span>Total Capacity:</span>
+                                                    <span class="fw-bold text-success">{{ grid.capacity + grid.flexible_capacity }} MW</span>
+                                                </div>
+                                                {% endif %}
+                                            </div>
+                                        </li>
+                                        {% endfor %}
+                                    </ul>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="mt-3 d-flex gap-2">
+                        <button onclick="location.href='/scenarios/edit/{{ scenario.id }}'" 
+                                class="btn btn-outline-primary">
+                            <i class="fas fa-edit"></i> Edit
+                        </button>
+                        
+                        <button onclick="location.href='/optimization/{{ scenario.id }}/optimize'" 
+                                class="btn btn-outline-info">
+                            <i class="fas fa-chart-line"></i> Optimize
+                        </button>
+                        
+                        {% if scenario.is_active %}
+                        <button onclick="deactivateScenario('{{ scenario.id }}')" 
+                                class="btn btn-outline-warning">
+                            <i class="fas fa-power-off"></i> Deactivate
+                        </button>
+                        {% else %}
+                        <button onclick="activateScenario('{{ scenario.id }}')" 
+                                class="btn btn-outline-success">
+                            <i class="fas fa-power-off"></i> Activate
+                        </button>
+                        {% endif %}
+                    </div>
+                </div>
+            </div>
+        </div>
+        {% endfor %}
+    </div>
+    {% else %}
+    <div class="alert alert-info">
+        <i class="fas fa-info-circle"></i> No scenarios found. Create a new one to get started!
+    </div>
+    {% endif %}
+</div>
+{% endblock %}

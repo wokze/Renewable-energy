@@ -1,0 +1,59 @@
+<!-- src/templates/photovoltaics.html -->
+{% extends "base.html" %}
+
+{% block content %}
+<div class="pv-management">
+    <h1>Photovoltaic Management</h1>
+
+    <div class="available-pvs">
+        <h2>Available PV Models</h2>
+        {% for pv_type in pvs %}
+        <div class="pv-card">
+            {% set pv = pv_factory.create_pv(pv_type) %}
+            <h3>{{ pv.model_name }}</h3>
+            <div class="pv-specs">
+                <p>Capacity: {{ pv.capacity_per_turbine }} MW</p>
+                <p>Technology: {{ pv.technology }}</p>
+                <p>Manufactured: {{ pv.manufactured_date }}</p>
+                <p>Temperature Range: {{ pv.temperature_range }}</p>
+            </div>
+            <a href="{{ url_for('photovoltaics.pv_detail', pv_type=pv_type) }}" class="btn btn-primary">
+                View Details
+            </a>
+        </div>
+        {% endfor %}
+    </div>
+</div>
+
+<style>
+    .pv-management {
+        padding: 20px;
+    }
+
+    .pv-card {
+        border: 1px solid #ccc;
+        padding: 15px;
+        margin: 10px;
+        border-radius: 5px;
+        background-color: #fff;
+        box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+    }
+
+    .pv-specs {
+        margin: 10px 0;
+    }
+
+    .btn-primary {
+        display: inline-block;
+        padding: 8px 16px;
+        background-color: #007bff;
+        color: white;
+        text-decoration: none;
+        border-radius: 4px;
+    }
+
+    .btn-primary:hover {
+        background-color: #0056b3;
+    }
+</style>
+{% endblock %}

@@ -1,0 +1,58 @@
+{% extends "base.html" %}
+
+{% block content %}
+<div class="turbine-management">
+    <h1>Wind Turbine Management</h1>
+
+    <div class="available-turbines">
+        <h2>Available Turbine Models</h2>
+        {% for turbine_type in turbines %}
+        <div class="turbine-card">
+            {% set turbine = turbine_factory.create_turbine(turbine_type) %}
+            <h3>{{ turbine.model_name }}</h3>
+            <div class="turbine-specs">
+                <p>Capacity: {{ turbine.capacity }} MW</p>
+                <p>Manufacturer: {{ turbine.manufacturer }}</p>
+                <p>Rotor Diameter: {{ turbine.rotor_diameter }}m</p>
+                <p>Hub Height: {{ turbine.hub_height }}m</p>
+            </div>
+            <a href="{{ url_for('turbines.turbine_detail', turbine_type=turbine_type) }}" class="btn btn-primary">
+                View Details
+            </a>
+        </div>
+        {% endfor %}
+    </div>
+</div>
+
+<style>
+    .turbine-management {
+        padding: 20px;
+    }
+
+    .turbine-card {
+        border: 1px solid #ccc;
+        padding: 15px;
+        margin: 10px;
+        border-radius: 5px;
+        background-color: #fff;
+        box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+    }
+
+    .turbine-specs {
+        margin: 10px 0;
+    }
+
+    .btn-primary {
+        display: inline-block;
+        padding: 8px 16px;
+        background-color: #007bff;
+        color: white;
+        text-decoration: none;
+        border-radius: 4px;
+    }
+
+    .btn-primary:hover {
+        background-color: #0056b3;
+    }
+</style>
+{% endblock %}

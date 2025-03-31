@@ -1,0 +1,58 @@
+{% extends "base.html" %}
+
+{% block content %}
+<div class="grid-management">
+    <h1>Grid Management</h1>
+
+    <div class="available-grids">
+        <h2>Available Grid Systems</h2>
+        {% for grid_type in grids %}
+        <div class="grid-card">
+            {% set grid = grid_factory.create_grid(grid_type) %}
+            <h3>{{ grid.grid_id }}</h3>
+            <div class="grid-specs">
+                <p>Capacity: {{ grid.capacity }} MW</p>
+                <p>Voltage Level: {{ grid.voltage_level }} kV</p>
+                <p>Frequency: {{ grid.frequency }} Hz</p>
+                <p>Power Factor: {{ grid.power_factor }}</p>
+            </div>
+            <a href="{{ url_for('grids.grid_detail', grid_type=grid_type) }}" class="btn btn-primary">
+                View Details
+            </a>
+        </div>
+        {% endfor %}
+    </div>
+</div>
+
+<style>
+    .grid-management {
+        padding: 20px;
+    }
+
+    .grid-card {
+        border: 1px solid #ccc;
+        padding: 15px;
+        margin: 10px;
+        border-radius: 5px;
+        background-color: #fff;
+        box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+    }
+
+    .grid-specs {
+        margin: 10px 0;
+    }
+
+    .btn-primary {
+        display: inline-block;
+        padding: 8px 16px;
+        background-color: #007bff;
+        color: white;
+        text-decoration: none;
+        border-radius: 4px;
+    }
+
+    .btn-primary:hover {
+        background-color: #0056b3;
+    }
+</style>
+{% endblock %}

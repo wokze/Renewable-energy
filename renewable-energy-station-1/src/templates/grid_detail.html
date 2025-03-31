@@ -1,0 +1,104 @@
+{% extends "base.html" %}
+
+{% block content %}
+<div class="grid-detail">
+    <h1>{{ grid.grid_id }}</h1>
+
+    <div class="grid-info">
+        <section class="specs">
+            <h2>Specifications</h2>
+            <table>
+                <tr>
+                    <td>Capacity:</td>
+                    <td>{{ grid.capacity }} MW</td>
+                </tr>
+                <tr>
+                    <td>Voltage Level:</td>
+                    <td>{{ grid.voltage_level }} kV</td>
+                </tr>
+                <tr>
+                    <td>Frequency:</td>
+                    <td>{{ grid.frequency }} Hz</td>
+                </tr>
+                <tr>
+                    <td>Power Factor:</td>
+                    <td>{{ grid.power_factor }}</td>
+                </tr>
+                <tr>
+                    <td>Max Import:</td>
+                    <td>{{ grid.max_import }} MW</td>
+                </tr>
+                <tr>
+                    <td>Max Export:</td>
+                    <td>{{ grid.max_export }} MW</td>
+                </tr>
+                <tr>
+                    <td>Flexible Capacity:</td>
+                    <td>{{ grid.flexible_capacity }} MW</td>
+                </tr>
+            </table>
+        </section>
+
+        <section class="status">
+            <h2>Current Status</h2>
+            <table>
+                <tr>
+                    <td>Mode:</td>
+                    <td>{{ grid.current_mode.value }}</td>
+                </tr>
+                <tr>
+                    <td>Current Load:</td>
+                    <td>{{ grid.current_load }} MW</td>
+                </tr>
+                <tr>
+                    <td>Current Frequency:</td>
+                    <td>{{ grid.current_frequency }} Hz</td>
+                </tr>
+                <tr>
+                    <td>Current Voltage:</td>
+                    <td>{{ grid.current_voltage }} kV</td>
+                </tr>
+                <tr>
+                    <td>Power Quality:</td>
+                    <td>{{ (grid.power_quality * 100)|round(1) }}%</td>
+                </tr>
+            </table>
+        </section>
+    </div>
+
+    <div class="actions">
+        <a href="{{ url_for('grids.list_grids') }}" class="btn btn-secondary">Back to Grids</a>
+    </div>
+</div>
+
+<style>
+    .grid-detail {
+        max-width: 1200px;
+        margin: 0 auto;
+        padding: 20px;
+    }
+
+    .grid-info {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+        gap: 20px;
+        margin: 20px 0;
+    }
+
+    section {
+        border: 1px solid #ddd;
+        border-radius: 5px;
+        padding: 20px;
+    }
+
+    table {
+        width: 100%;
+        border-collapse: collapse;
+    }
+
+    td, th {
+        padding: 8px;
+        border-bottom: 1px solid #ddd;
+    }
+</style>
+{% endblock %}

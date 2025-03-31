@@ -1,0 +1,295 @@
+<!-- src/templates/pv_forecast.html -->
+{% extends "base.html" %}
+
+{% block content %}
+<div class="container py-4">
+    <div class="header-section mb-4">
+        <h1 class="display-5">
+            <i class="fas fa-sun"></i> PV Production Forecast
+        </h1>
+        <p class="lead text-muted">Model: {{ pv.model_name }}</p>
+    </div>
+
+    <div class="row mb-4">
+        <div class="col-lg-4">
+            <div class="card shadow-sm">
+                <div class="card-header d-flex justify-content-between align-items-center">
+                    <h5 class="mb-0">Parameters</h5>
+                    <button class="btn btn-sm btn-outline-primary" data-bs-toggle="modal" data-bs-target="#parametersModal">
+                        <i class="fas fa-edit"></i> Edit
+                    </button>
+                </div>
+                <div class="card-body">
+                    <ul class="list-group list-group-flush">
+                        <li class="list-group-item d-flex justify-content-between align-items-center">
+                            Location
+                            <span class="text-muted">{{ latitude }}, {{ longitude }}</span>
+                        </li>
+                        <li class="list-group-item d-flex justify-content-between align-items-center">
+                            Panel Angle
+                            <span class="text-muted">{{ angle }}°</span>
+                        </li>
+                        <li class="list-group-item d-flex justify-content-between align-items-center">
+                            Azimuth
+                            <span class="text-muted">{{ azimuth }}° {% if azimuth == 0 %}(south){% elif azimuth == 90 %}(west){% elif azimuth == -90 %}(east){% elif azimuth == 180 %}(north){% endif %}</span>
+                        </li>
+                        <li class="list-group-item d-flex justify-content-between align-items-center">
+                            Peak Power
+                            <span class="text-muted">{{ pv.capacity_per_panel }} kW</span>
+                        </li>
+                    </ul>
+                </div>
+            </div>
+
+            <div class="card shadow-sm mt-4">
+                <div class="card-header">
+                    <h5 class="mb-0">Annual Production</h5>
+                </div>
+                <div class="card-body">
+                    {% set annual_energy = forecast_data.outputs.totals.fixed.E_y %}
+                    <h2 class="text-center text-primary mb-3">{{ annual_energy }} kWh/year</h2>
+                    <p class="mb-0 text-muted">Specific production: {{ forecast_data.outputs.totals.fixed.specific_yield }} kWh/kWp</p>
+                </div>
+            </div>
+        </div>
+
+        <div class="col-lg-8">
+            <div class="card shadow-sm">
+                <div class="card-header">
+                    <h5 class="mb-0">Monthly Production</h5>
+                </div>
+                <div class="card-body">
+                    <canvas id="monthlyChart" style="height: 300px;"></canvas>
+                </div>
+            </div>
+
+            <div class="card shadow-sm mt-4">
+                <div class="card-header d-flex justify-content-between align-items-center">
+                    <h5 class="mb-0">Hourly Production</h5>
+                    <div class="btn-group">
+                        <button class="btn btn-sm btn-outline-secondary active" id="showJanuary">January</button>
+                        <button class="btn btn-sm btn-outline-secondary" id="showJuly">July</button>
+                    </div>
+                </div>
+                <div class="card-body">
+                    <canvas id="hourlyChart" style="height: 300px;"></canvas>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="row">
+        <div class="col-12">
+            <div class="card shadow-sm">
+                <div class="card-header">
+                    <h5 class="mb-0">Production Details</h5>
+                </div>
+                <div class="card-body">
+                    <div class="table-responsive">
+                        <table class="table table-hover">
+                            <thead>
+                                <tr>
+                                    <th>Month</th>
+                                    <th>Daily Energy (kWh)</th>
+                                    <th>Monthly Energy (kWh)</th>
+                                    <th>Daily Irradiation (kWh/m²)</th>
+                                    <th>Monthly Irradiation (kWh/m²)</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {% for month in forecast_data.outputs.monthly %}
+                                <tr>
+                                    <td>{{ ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"][month["month"] - 1] }}</td>
+                                    <td>{{ month["E_d"] }}</td>
+                                    <td>{{ month["E_m"] }}</td>
+                                    <td>{{ month["H(i)_d"] }}</td>
+                                    <td>{{ month["H(i)_m"] }}</td>
+                                </tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="text-center mt-4">
+        <a href="{{ url_for('photovoltaics.pv_detail', pv_type=pv_type) }}" class="btn btn-secondary">
+            <i class="fas fa-arrow-left"></i> Back to Module Details
+        </a>
+    </div>
+</div>
+
+<!-- Parameters Edit Modal -->
+<div class="modal fade" id="parametersModal" tabindex="-1" aria-labelledby="parametersModalLabel" aria-hidden="true">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <form id="forecastForm" action="{{ url_for('photovoltaics.pv_forecast', pv_type=pv_type) }}" method="get">
+                <div class="modal-header">
+                    <h5 class="modal-title" id="parametersModalLabel">Edit Parameters</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <div class="modal-body">
+                    <div class="mb-3">
+                        <label for="lat" class="form-label">Latitude</label>
+                        <input type="number" class="form-control" id="lat" name="lat" value="{{ latitude }}" step="0.000001" required>
+                    </div>
+                    <div class="mb-3">
+                        <label for="lon" class="form-label">Longitude</label>
+                        <input type="number" class="form-control" id="lon" name="lon" value="{{ longitude }}" step="0.000001" required>
+                    </div>
+                    <div class="mb-3">
+                        <label for="angle" class="form-label">Installation Angle (degrees)</label>
+                        <input type="number" class="form-control" id="angle" name="angle" value="{{ angle }}" min="0" max="90" step="0.1" required>
+                    </div>
+                    <div class="mb-3">
+                        <label for="azimuth" class="form-label">Azimuth (degrees, 0=south, 90=west)</label>
+                        <input type="number" class="form-control" id="azimuth" name="azimuth" value="{{ azimuth }}" min="-180" max="180" step="0.1" required>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                    <button type="submit" class="btn btn-primary">Update Forecast</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    const months = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"];
+    
+    // Monthly chart
+    const monthlyCtx = document.getElementById('monthlyChart').getContext('2d');
+    const monthlyData = {{ forecast_data.outputs.monthly|tojson }};
+    
+    new Chart(monthlyCtx, {
+        type: 'bar',
+        data: {
+            labels: months,
+            datasets: [{
+                label: 'Monthly Energy Production (kWh)',
+                data: monthlyData.map(m => m.E_m),
+                backgroundColor: 'rgba(54, 162, 235, 0.5)',
+                borderColor: 'rgba(54, 162, 235, 1)',
+                borderWidth: 1
+            }, {
+                label: 'Monthly Irradiation (kWh/m²)',
+                data: monthlyData.map(m => m["H(i)_m"]),
+                backgroundColor: 'rgba(255, 206, 86, 0.5)',
+                borderColor: 'rgba(255, 206, 86, 1)',
+                borderWidth: 1,
+                type: 'line',
+                yAxisID: 'y1'
+            }]
+        },
+        options: {
+            responsive: true,
+            maintainAspectRatio: false,
+            scales: {
+                y: {
+                    beginAtZero: true,
+                    title: {
+                        display: true,
+                        text: 'Energy (kWh)'
+                    }
+                },
+                y1: {
+                    beginAtZero: true,
+                    position: 'right',
+                    grid: {
+                        drawOnChartArea: false
+                    },
+                    title: {
+                        display: true,
+                        text: 'Irradiation (kWh/m²)'
+                    }
+                }
+            }
+        }
+    });
+    
+    // Hourly chart
+    const hourlyCtx = document.getElementById('hourlyChart').getContext('2d');
+    const hourlyData = {{ forecast_data.outputs.hourly|tojson }};
+    
+    // Process hourly data for January and July
+    const januaryData = processHourlyData(hourlyData, '01');
+    const julyData = processHourlyData(hourlyData, '07');
+    
+    let hourlyChart = new Chart(hourlyCtx, {
+        type: 'line',
+        data: {
+            labels: Array.from({length: 24}, (_, i) => `${i}:00`),
+            datasets: [{
+                label: 'January Production (kW)',
+                data: januaryData,
+                backgroundColor: 'rgba(54, 162, 235, 0.2)',
+                borderColor: 'rgba(54, 162, 235, 1)',
+                borderWidth: 2,
+                fill: true
+            }]
+        },
+        options: {
+            responsive: true,
+            maintainAspectRatio: false,
+            scales: {
+                y: {
+                    beginAtZero: true,
+                    title: {
+                        display: true,
+                        text: 'Power (kW)'
+                    }
+                }
+            }
+        }
+    });
+    
+    document.getElementById('showJanuary').addEventListener('click', function() {
+        updateHourlyChart(hourlyChart, januaryData, 'January Production (kW)', 'rgba(54, 162, 235, 0.2)', 'rgba(54, 162, 235, 1)');
+        toggleActiveButton(this, document.getElementById('showJuly'));
+    });
+    
+    document.getElementById('showJuly').addEventListener('click', function() {
+        updateHourlyChart(hourlyChart, julyData, 'July Production (kW)', 'rgba(255, 159, 64, 0.2)', 'rgba(255, 159, 64, 1)');
+        toggleActiveButton(this, document.getElementById('showJanuary'));
+    });
+    
+    function processHourlyData(data, month) {
+        // Group by hour and calculate average for the specified month
+        const hourlyValues = Array(24).fill(0);
+        const hourCounts = Array(24).fill(0);
+        
+        data.forEach(item => {
+            const timeStr = item.time;
+            if (timeStr.substring(4, 6) === month) {
+                const hour = parseInt(timeStr.substring(9, 11));
+                hourlyValues[hour] += item.P;
+                hourCounts[hour]++;
+            }
+        });
+        
+        // Calculate averages
+        return hourlyValues.map((value, i) => hourCounts[i] ? value / hourCounts[i] : 0);
+    }
+    
+    function updateHourlyChart(chart, data, label, backgroundColor, borderColor) {
+        chart.data.datasets[0].data = data;
+        chart.data.datasets[0].label = label;
+        chart.data.datasets[0].backgroundColor = backgroundColor;
+        chart.data.datasets[0].borderColor = borderColor;
+        chart.update();
+    }
+    
+    function toggleActiveButton(activeButton, inactiveButton) {
+        activeButton.classList.add('active');
+        inactiveButton.classList.remove('active');
+    }
+});
+</script>
+{% endblock %}

@@ -1,0 +1,22 @@
+{
+                  "main_grid": {
+                                    "grid_id": "MAIN-GRID-01",
+                                    "capacity": 10000,
+                                    "voltage_level": 110.0,
+                                    "frequency": 50.0,
+                                    "power_factor": 0.95,
+                                    "max_import": 2000,
+                                    "max_export": 10000,
+                                    "flexible_capacity": 3000
+                  },
+                  "backup_grid": {
+                                    "grid_id": "BACKUP-GRID-01",
+                                    "capacity": 5000,
+                                    "voltage_level": 110.0,
+                                    "frequency": 50.0,
+                                    "power_factor": 0.95,
+                                    "max_import": 1000,
+                                    "max_export": 5000,
+                                    "flexible_capacity": 1500
+                  }
+}

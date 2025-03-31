@@ -1,0 +1,242 @@
+{
+    "moss_landing": {
+        "model_name": "Vistra Moss Landing",
+        "capacity": 1.6,
+        "max_charge_rate": 0.4,
+        "max_discharge_rate": 0.4,
+        "manufactured_date": "2021-08",
+        "eoc_voltage": 4.2
+    },
+    "hornsdale": {
+        "model_name": "Tesla Hornsdale",
+        "capacity": 0.194,
+        "max_charge_rate": 0.15,
+        "max_discharge_rate": 0.193,
+        "manufactured_date": "2017-12",
+        "eoc_voltage": 4.2
+    },
+    "byd_battery_box": {
+        "model_name": "BYD Battery-Box",
+        "capacity": 0.014,
+        "max_charge_rate": 0.007,
+        "max_discharge_rate": 0.007,
+        "manufactured_date": "2020-10",
+        "eoc_voltage": 4.2,
+        "requires_eoc": true,
+        "min_safe_charge": 0.05,
+        "max_safe_charge": 0.95,
+        "charge_rate_curve": {
+            "0.0": 1.0,
+            "0.5": 0.8,
+            "0.7": 0.6,
+            "0.8": 0.4,
+            "0.9": 0.2
+        },
+        "discharge_rate_curve": {
+            "0.2": 0.6,
+            "0.3": 0.8,
+            "0.5": 1.0,
+            "0.7": 0.9,
+            "0.9": 0.7
+        },
+        "temperature_limits": {
+            "min_operating": -10,
+            "max_operating": 50,
+            "optimal_min": 10,
+            "optimal_max": 40
+        },
+        "cycle_life": 8000
+    },
+    "enphase": {
+        "model_name": "Enphase Energy Storage",
+        "capacity": 0.01,
+        "max_charge_rate": 0.005,
+        "max_discharge_rate": 0.005,
+        "manufactured_date": "2021-06",
+        "eoc_voltage": 4.2,
+        "requires_eoc": true,
+        "min_safe_charge": 0.10,
+        "max_safe_charge": 0.95,
+        "charge_rate_curve": {
+            "0.0": 1.0,
+            "0.5": 0.8,
+            "0.7": 0.6,
+            "0.8": 0.4,
+            "0.9": 0.2
+        },
+        "discharge_rate_curve": {
+            "0.2": 0.6,
+            "0.3": 0.8,
+            "0.5": 1.0,
+            "0.7": 0.9,
+            "0.9": 0.7
+        },
+        "temperature_limits": {
+            "min_operating": -5,
+            "max_operating": 45,
+            "optimal_min": 10,
+            "optimal_max": 35
+        },
+        "cycle_life": 10000
+    },
+    "huawei_luna2000": {
+        "model_name": "Huawei LUNA2000",
+        "capacity": 0.015,
+        "max_charge_rate": 0.0075,
+        "max_discharge_rate": 0.0075,
+        "manufactured_date": "2021-04",
+        "eoc_voltage": 4.2,
+        "requires_eoc": true,
+        "min_safe_charge": 0.10,
+        "max_safe_charge": 0.95,
+        "charge_rate_curve": {
+            "0.0": 1.0,
+            "0.5": 0.8,
+            "0.7": 0.6,
+            "0.8": 0.4,
+            "0.9": 0.2
+        },
+        "discharge_rate_curve": {
+            "0.2": 0.6,
+            "0.3": 0.8,
+            "0.5": 1.0,
+            "0.7": 0.9,
+            "0.9": 0.7
+        },
+        "temperature_limits": {
+            "min_operating": -10,
+            "max_operating": 50,
+            "optimal_min": 10,
+            "optimal_max": 40
+        },
+        "cycle_life": 10000
+    },
+    "pylontech": {
+        "model_name": "Pylontech Battery",
+        "capacity": 0.012,
+        "max_charge_rate": 0.006,
+        "max_discharge_rate": 0.006,
+        "manufactured_date": "2020-09",
+        "eoc_voltage": 4.2,
+        "requires_eoc": true,
+        "min_safe_charge": 0.10,
+        "max_safe_charge": 0.95,
+        "charge_rate_curve": {
+            "0.0": 1.0,
+            "0.5": 0.8,
+            "0.7": 0.6,
+            "0.8": 0.4,
+            "0.9": 0.2
+        },
+        "discharge_rate_curve": {
+            "0.2": 0.6,
+            "0.3": 0.8,
+            "0.5": 1.0,
+            "0.7": 0.9,
+            "0.9": 0.7
+        },
+        "temperature_limits": {
+            "min_operating": -10,
+            "max_operating": 50,
+            "optimal_min": 10,
+            "optimal_max": 40
+        },
+        "cycle_life": 6000
+    },
+    "samsung_sdi": {
+        "model_name": "Samsung SDI Battery",
+        "capacity": 0.02,
+        "max_charge_rate": 0.01,
+        "max_discharge_rate": 0.01,
+        "manufactured_date": "2021-07",
+        "eoc_voltage": 4.2,
+        "requires_eoc": true,
+        "min_safe_charge": 0.10,
+        "max_safe_charge": 0.95,
+        "charge_rate_curve": {
+            "0.0": 1.0,
+            "0.5": 0.8,
+            "0.7": 0.6,
+            "0.8": 0.4,
+            "0.9": 0.2
+        },
+        "discharge_rate_curve": {
+            "0.2": 0.6,
+            "0.3": 0.8,
+            "0.5": 1.0,
+            "0.7": 0.9,
+            "0.9": 0.7
+        },
+        "temperature_limits": {
+            "min_operating": -10,
+            "max_operating": 50,
+            "optimal_min": 10,
+            "optimal_max": 40
+        },
+        "cycle_life": 7500
+    },
+    "sonnen_batterie": {
+        "model_name": "SonnenBatterie",
+        "capacity": 0.01,
+        "max_charge_rate": 0.005,
+        "max_discharge_rate": 0.005,
+        "manufactured_date": "2021-05",
+        "eoc_voltage": 4.2,
+        "requires_eoc": true,
+        "min_safe_charge": 0.10,
+        "max_safe_charge": 0.95,
+        "charge_rate_curve": {
+            "0.0": 1.0,
+            "0.5": 0.8,
+            "0.7": 0.6,
+            "0.8": 0.4,
+            "0.9": 0.2
+        },
+        "discharge_rate_curve": {
+            "0.2": 0.6,
+            "0.3": 0.8,
+            "0.5": 1.0,
+            "0.7": 0.9,
+            "0.9": 0.7
+        },
+        "temperature_limits": {
+            "min_operating": -5,
+            "max_operating": 45,
+            "optimal_min": 10,
+            "optimal_max": 35
+        },
+        "cycle_life": 10000
+    },
+    "panasonic_home_battery": {
+        "model_name": "Panasonic Home Battery",
+        "capacity": 0.017,
+        "max_charge_rate": 0.0085,
+        "max_discharge_rate": 0.0085,
+        "manufactured_date": "2022-03",
+        "eoc_voltage": 4.2,
+        "requires_eoc": true,
+        "min_safe_charge": 0.10,
+        "max_safe_charge": 0.95,
+        "charge_rate_curve": {
+            "0.0": 1.0,
+            "0.5": 0.8,
+            "0.7": 0.6,
+            "0.8": 0.4,
+            "0.9": 0.2
+        },
+        "discharge_rate_curve": {
+            "0.2": 0.6,
+            "0.3": 0.8,
+            "0.5": 1.0,
+            "0.7": 0.9,
+            "0.9": 0.7
+        },
+        "temperature_limits": {
+            "min_operating": -5,
+            "max_operating": 45,
+            "optimal_min": 10,
+            "optimal_max": 35
+        },
+        "cycle_life": 8000
+    }
+}

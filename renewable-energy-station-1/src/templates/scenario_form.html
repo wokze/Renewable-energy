@@ -1,0 +1,371 @@
+{% extends "base.html" %}
+
+{% block content %}
+<div class="scenario-form">
+    <div class="header-section mb-4">
+        <h1 class="display-4 mb-3">
+            <i class="fas fa-project-diagram"></i> 
+            {% if edit_mode %}Edit{% else %}Create New{% endif %} Scenario
+        </h1>
+        <p class="lead text-muted">Configure your renewable energy components</p>
+    </div>
+
+    <form method="POST" action="{{ url_for('scenarios.edit_scenario', id=scenario.id) if edit_mode else url_for('scenarios.create_scenario') }}">
+        <!-- Basic Information -->
+        <section class="form-section bg-white shadow-sm">
+            <div class="section-header">
+                <i class="fas fa-info-circle"></i>
+                <h2>Basic Information</h2>
+            </div>
+            <div class="form-group">
+                <label for="name" class="form-label">Scenario Name</label>
+                <input type="text" class="form-control" id="name" name="name" 
+                       value="{{ scenario.name if edit_mode }}" required>
+            </div>
+            <div class="form-group">
+                <label for="description" class="form-label">Description</label>
+                <textarea class="form-control" id="description" name="description" 
+                          rows="3" placeholder="Describe your energy scenario...">{{ scenario.description if edit_mode }}</textarea>
+            </div>
+        </section>
+
+        <!-- Location Information -->
+        <section class="form-section bg-white shadow-sm">
+            <div class="section-header">
+                <i class="fas fa-map-marker-alt"></i>
+                <h2>Location Details</h2>
+            </div>
+            <div class="row g-3">
+                <div class="col-12">
+                    <label class="form-label">Location Name</label>
+                    <input type="text" class="form-control" name="location_name" 
+                           value="{{ scenario.location.name if edit_mode }}" required>
+                </div>
+                <div class="col-md-6">
+                    <label class="form-label">Latitude</label>
+                    <div class="input-group">
+                        <span class="input-group-text"><i class="fas fa-compass"></i></span>
+                        <input type="number" class="form-control" name="latitude" 
+                               step="0.000001" value="{{ scenario.location.latitude if edit_mode }}" required>
+                    </div>
+                </div>
+                <div class="col-md-6">
+                    <label class="form-label">Longitude</label>
+                    <div class="input-group">
+                        <span class="input-group-text"><i class="fas fa-compass"></i></span>
+                        <input type="number" class="form-control" name="longitude" 
+                               step="0.000001" value="{{ scenario.location.longitude if edit_mode }}" required>
+                    </div>
+                </div>
+            </div>
+            <div class="row g-3 mt-3">
+                <div class="col-md-6">
+                    <label class="form-label">Average Solar Hours/Day</label>
+                    <div class="input-group">
+                        <span class="input-group-text"><i class="fas fa-sun"></i></span>
+                        <input type="number" class="form-control" name="solar_hours" 
+                               step="0.1" value="{{ scenario.location.average_solar_hours if edit_mode }}" required>
+                    </div>
+                </div>
+                <div class="col-md-6">
+                    <label class="form-label">Average Wind Speed (m/s)</label>
+                    <div class="input-group">
+                        <span class="input-group-text"><i class="fas fa-wind"></i></span>
+                        <input type="number" class="form-control" name="wind_speed" 
+                               step="0.1" value="{{ scenario.location.average_wind_speed if edit_mode }}" required>
+                    </div>
+                </div>
+            </div>
+            <div class="row g-3 mt-3">
+                <div class="col-12">
+                    <label class="form-label">Timezone</label>
+                    <div class="input-group">
+                        <span class="input-group-text"><i class="fas fa-clock"></i></span>
+                        <select class="form-select" name="timezone" id="timezone" required>
+                            <option value="" disabled>Select timezone or use coordinates</option>
+                            <option value="UTC" selected>UTC</option>
+                            <option value="Europe/Athens">Europe/Athens</option>
+                            <option value="Europe/London">Europe/London</option>
+                            <option value="America/New_York">America/New_York</option>
+                            <option value="Asia/Tokyo">Asia/Tokyo</option>
+                            <option value="Australia/Sydney">Australia/Sydney</option>
+                            <!-- Add more common timezones as needed -->
+                        </select>
+                        <button type="button" class="btn btn-outline-secondary" onclick="detectTimezone()">
+                            <i class="fas fa-map-pin"></i> Detect from Coordinates
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- Components Configuration -->
+        <div class="components-container">
+            <!-- Battery Selection -->
+            <section class="form-section bg-white shadow-sm">
+                <div class="section-header">
+                    <i class="fas fa-battery-full"></i>
+                    <h2>Battery Configuration</h2>
+                </div>
+                <div class="component-grid">
+                    {% for battery_type in available_batteries %}
+                    <div class="component-card hover-effect">
+                        {% set battery = battery_factory.create_battery(battery_type) %}
+                        <div class="form-check component-header">
+                            <input type="checkbox" class="form-check-input" name="batteries" 
+                                   value="{{ battery_type }}" id="battery_{{ battery_type }}"
+                                   {% if edit_mode and battery_type in scenario.batteries|map(attribute='battery_type') %}checked{% endif %}>
+                            <label class="form-check-label" for="battery_{{ battery_type }}">
+                                <h3>{{ battery.model_name }}</h3>
+                            </label>
+                        </div>
+                        <div class="specs-card">
+                            <div class="spec-item">
+                                <span class="spec-label">Capacity</span>
+                                <span class="spec-value">{{ battery.capacity }} GWh</span>
+                            </div>
+                            <div class="spec-item">
+                                <span class="spec-label">Max Charge</span>
+                                <span class="spec-value">{{ battery.max_charge_rate }} GW</span>
+                            </div>
+                            <div class="spec-item">
+                                <span class="spec-label">Max Discharge</span>
+                                <span class="spec-value">{{ battery.max_discharge_rate }} GW</span>
+                            </div>
+                        </div>
+                        <div class="quantity-control">
+                            <label class="form-label">Quantity</label>
+                            <input type="number" class="form-control" 
+                                   name="battery_quantity_{{ battery_type }}"
+                                   value="{{ scenario.batteries|selectattr('battery_type', 'equalto', battery_type)|map(attribute='quantity')|first|default(1) if edit_mode else 1 }}"
+                                   min="1">
+                        </div>
+                    </div>
+                    {% endfor %}
+                </div>
+            </section>
+
+            <!-- Solar Panel Selection -->
+            <section class="form-section bg-white shadow-sm">
+                <div class="section-header">
+                    <i class="fas fa-solar-panel"></i>
+                    <h2>Solar Panel Configuration</h2>
+                </div>
+                <div class="component-grid">
+                    {% for pv_type in available_pvs %}
+                    <div class="component-card hover-effect">
+                        {% set pv = pv_factory.create_pv(pv_type) %}
+                        <div class="form-check component-header">
+                            <input type="checkbox" class="form-check-input" name="pvs" 
+                                   value="{{ pv_type }}" id="pv_{{ pv_type }}"
+                                   {% if edit_mode and pv_type in scenario.solar_panels|map(attribute='model_type') %}checked{% endif %}>
+                            <label class="form-check-label" for="pv_{{ pv_type }}">
+                                <h3>{{ pv.model_name }}</h3>
+                            </label>
+                        </div>
+                        <div class="specs-card">
+                            <div class="spec-item">
+                                <span class="spec-label">Capacity</span>
+                                <span class="spec-value">{{ pv.capacity_per_panel }} kW</span>
+                            </div>
+                            <div class="spec-item">
+                                <span class="spec-label">Efficiency</span>
+                                <span class="spec-value">{{ "%.1f"|format(pv.efficiency * 100) }}%</span>
+                            </div>
+                            <div class="spec-item">
+                                <span class="spec-label">Type</span>
+                                <span class="spec-value">{{ pv.module_type }}</span>
+                            </div>
+                        </div>
+                        <div class="quantity-control">
+                            <label class="form-label">Quantity</label>
+                            <input type="number" class="form-control" 
+                                   name="pv_quantity_{{ pv_type }}"
+                                   value="{{ scenario.solar_panels|selectattr('model_type', 'equalto', pv_type)|map(attribute='quantity')|first|default(1) if edit_mode else 1 }}"
+                                   min="1">
+                        </div>
+                    </div>
+                    {% endfor %}
+                </div>
+            </section>
+
+            <!-- Wind Turbine Selection -->
+            <section class="form-section bg-white shadow-sm">
+                <div class="section-header">
+                    <i class="fas fa-wind"></i>
+                    <h2>Wind Turbine Configuration</h2>
+                </div>
+                <div class="component-grid">
+                    {% for turbine_type in available_turbines %}
+                    <div class="component-card hover-effect">
+                        {% set turbine = turbine_factory.create_turbine(turbine_type) %}
+                        <div class="form-check component-header">
+                            <input type="checkbox" class="form-check-input" name="turbines" 
+                                   value="{{ turbine_type }}" id="turbine_{{ turbine_type }}"
+                                   {% if edit_mode and turbine_type in scenario.wind_turbines|map(attribute='turbine_type') %}checked{% endif %}>
+                            <label class="form-check-label" for="turbine_{{ turbine_type }}">
+                                <h3>{{ turbine.model_name }}</h3>
+                            </label>
+                        </div>
+                        <div class="specs-card">
+                            <div class="spec-item">
+                                <span class="spec-label">Capacity</span>
+                                <span class="spec-value">{{ turbine.capacity }} MW</span>
+                            </div>
+                            <div class="spec-item">
+                                <span class="spec-label">Cut-in Speed</span>
+                                <span class="spec-value">{{ turbine.cut_in_speed }} m/s</span>
+                            </div>
+                            <div class="spec-item">
+                                <span class="spec-label">Cut-out Speed</span>
+                                <span class="spec-value">{{ turbine.cut_out_speed }} m/s</span>
+                            </div>
+                        </div>
+                        <div class="quantity-control">
+                            <label class="form-label">Quantity</label>
+                            <input type="number" class="form-control" 
+                                   name="turbine_quantity_{{ turbine_type }}"
+                                   value="{{ scenario.wind_turbines|selectattr('turbine_type', 'equalto', turbine_type)|map(attribute='quantity')|first|default(1) if edit_mode else 1 }}"
+                                   min="1">
+                        </div>
+                    </div>
+                    {% endfor %}
+                </div>
+            </section>
+
+            <!-- Grid Selection -->
+            <section class="form-section bg-white shadow-sm">
+                <div class="section-header">
+                    <i class="fas fa-plug"></i>
+                    <h2>Grid Configuration</h2>
+                </div>
+                <div class="component-grid">
+                    {% for grid_type in available_grids %}
+                    <div class="component-card hover-effect">
+                        {% set grid = grid_factory.create_grid(grid_type) %}
+                        <div class="form-check component-header">
+                            <input type="radio" class="form-check-input" name="grid_type" 
+                                   value="{{ grid_type }}" id="grid_{{ grid_type }}"
+                                   {% if edit_mode and grid_type == scenario.grid_connections[0].grid_id %}checked{% endif %}>
+                            <label class="form-check-label" for="grid_{{ grid_type }}">
+                                <h3>{{ grid.grid_id }}</h3>
+                            </label>
+                        </div>
+                        <div class="specs-card">
+                            <div class="spec-item">
+                                <span class="spec-label">Base Capacity</span>
+                                <span class="spec-value">{{ grid.capacity }} MW</span>
+                            </div>
+                            <div class="spec-item">
+                                <span class="spec-label">Flexible Capacity</span>
+                                <span class="spec-value">{{ grid.flexible_capacity }} MW</span>
+                            </div>
+                            <div class="spec-item">
+                                <span class="spec-label">Voltage Level</span>
+                                <span class="spec-value">{{ grid.voltage_level }} kV</span>
+                            </div>
+                        </div>
+                    </div>
+                    {% endfor %}
+                </div>
+            </section>
+        </div>
+
+        <button type="submit" class="btn btn-primary btn-lg w-100 mt-4">
+            <i class="fas {% if edit_mode %}fa-save{% else %}fa-plus-circle{% endif %}"></i>
+            {% if edit_mode %}Update{% else %}Create{% endif %} Scenario
+        </button>
+    </form>
+</div>
+
+
+
+<style>
+    .scenario-form {
+        max-width: 1200px;
+        margin: 0 auto;
+        padding: 20px;
+    }
+
+    .form-section {
+        border-radius: 10px;
+        padding: 25px;
+        margin-bottom: 25px;
+        background: white;
+        transition: all 0.3s ease;
+    }
+
+    .section-header {
+        display: flex;
+        align-items: center;
+        gap: 10px;
+        margin-bottom: 20px;
+        padding-bottom: 10px;
+        border-bottom: 2px solid #f0f0f0;
+    }
+
+    .section-header i {
+        font-size: 1.5rem;
+        color: #0d6efd;
+    }
+
+    .component-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+        gap: 20px;
+    }
+
+    .component-card {
+        background: white;
+        border: 1px solid rgba(0,0,0,0.1);
+        border-radius: 10px;
+        padding: 20px;
+        transition: all 0.3s ease;
+    }
+
+    .hover-effect:hover {
+        transform: translateY(-5px);
+        box-shadow: 0 5px 15px rgba(0,0,0,0.1);
+    }
+
+    .specs-card {
+        background: #f8f9fa;
+        border-radius: 8px;
+        padding: 15px;
+        margin: 15px 0;
+    }
+
+    .spec-item {
+        display: flex;
+        justify-content: space-between;
+        padding: 5px 0;
+        border-bottom: 1px solid rgba(0,0,0,0.05);
+    }
+
+    .spec-label {
+        color: #6c757d;
+    }
+
+    .spec-value {
+        font-weight: 600;
+        color: #0d6efd;
+    }
+
+    .input-group-text {
+        background-color: #f8f9fa;
+        border: 1px solid #ced4da;
+    }
+
+    .input-group-text i {
+        color: #6c757d;
+    }
+
+    .btn-primary {
+        padding: 12px 24px;
+        font-weight: 600;
+        text-transform: uppercase;
+        letter-spacing: 0.5px;
+    }
+</style>
+{% endblock %}
+

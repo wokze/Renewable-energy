@@ -1,0 +1,206 @@
+<!-- src/templates/pv_detail.html -->
+{% extends "base.html" %} {% block content %}
+<div class="pv-detail">
+    <h1>{{ pv.model_name }}</h1>
+
+    <div class="pv-info">
+        <section class="specs">
+            <h2>Specifications</h2>
+            <table>
+                <tr>
+                    <td>Capacity per Panel:</td>
+                    <td>{{ pv.capacity_per_panel }} kW</td>
+                </tr>
+                <tr>
+                    <td>Module Type:</td>
+                    <td>{{ pv.module_type }}</td>
+                </tr>
+                <tr>
+                    <td>Efficiency:</td>
+                    <td>{{ pv.efficiency }}%</td>
+                </tr>
+                <tr>
+                    <td>Max Power:</td>
+                    <td>{{ pv.max_power }} W</td>
+                </tr>
+                <tr>
+                    <td>Temperature Coefficient:</td>
+                    <td>{{ pv.temperature_coefficient }}</td>
+                </tr>
+                <tr>
+                    <td>Operating Temperature Range:</td>
+                    <td>{{ pv.operating_temperature_range }}</td>
+                </tr>
+                <tr>
+                    <td>Warranty:</td>
+                    <td>{{ pv.warranty }}</td>
+                </tr>
+                <tr>
+                    <td>Dimensions:</td>
+                    <td>{{ pv.dimensions }}</td>
+                </tr>
+                <tr>
+                    <td>Weight:</td>
+                    <td>{{ pv.weight }} kg</td>
+                </tr>
+                <tr>
+                    <td>Max System Voltage:</td>
+                    <td>{{ pv.max_system_voltage }} V</td>
+                </tr>
+            </table>
+        </section>
+
+        <section class="performance">
+            <h2>Performance Calculator</h2>
+            <div class="calculator">
+                <div class="inputs">
+                    <div class="form-group">
+                        <label for="irradiance">Solar Irradiance (W/m²):</label>
+                        <input type="number" id="irradiance" value="1000" min="0" max="1500" />
+                    </div>
+                    <div class="form-group">
+                        <label for="temperature">Temperature (°C):</label>
+                        <input type="number" id="temperature" value="25" min="-40" max="85" />
+                    </div>
+                    <button onclick="calculateOutput()" class="btn btn-primary">
+                        Calculate
+                    </button>
+                </div>
+                <div class="results">
+                    <table>
+                        <tr>
+                            <td>Panel Area:</td>
+                            <td id="panel-area">
+                                {{ "%.2f"|format(pv.get_panel_area()) }} m²
+                            </td>
+                        </tr>
+                        <tr>
+                            <td>Expected Output:</td>
+                            <td id="expected-output">-</td>
+                        </tr>
+                        <tr>
+                            <td>Temperature Effect:</td>
+                            <td id="temp-effect">-</td>
+                        </tr>
+                    </table>
+                </div>
+            </div>
+        </section>
+    </div>
+
+    <div class="actions">
+        <a href="{{ url_for('photovoltaics.pv_forecast', pv_type=pv_type) }}" class="btn btn-primary">
+            <i class="fas fa-chart-line"></i> View Production Forecast
+        </a>
+        <a href="{{ url_for('photovoltaics.list_pvs') }}" class="btn btn-secondary">Back to PVs</a>
+    </div>
+</div>
+
+<style>
+    .pv-detail {
+        max-width: 1200px;
+        margin: 0 auto;
+        padding: 20px;
+    }
+
+    .pv-info {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+        gap: 20px;
+        margin: 20px 0;
+    }
+
+    section {
+        border: 1px solid #ddd;
+        border-radius: 5px;
+        padding: 20px;
+    }
+
+    table {
+        width: 100%;
+        border-collapse: collapse;
+    }
+
+    td,
+    th {
+        padding: 8px;
+        border-bottom: 1px solid #ddd;
+    }
+
+    .btn {
+        display: inline-block;
+        padding: 10px 20px;
+        border-radius: 4px;
+        text-decoration: none;
+        margin: 10px 0;
+    }
+
+    .btn-secondary {
+        background-color: #6c757d;
+        color: white;
+    }
+
+    .btn-secondary:hover {
+        background-color: #5a6268;
+    }
+
+    .calculator {
+        background-color: #f8f9fa;
+        padding: 15px;
+        border-radius: 5px;
+    }
+
+    .inputs {
+        margin-bottom: 15px;
+    }
+
+    .form-group {
+        margin-bottom: 10px;
+    }
+
+    .form-group label {
+        display: block;
+        margin-bottom: 5px;
+    }
+
+    .form-group input {
+        width: 100%;
+        padding: 8px;
+        border: 1px solid #ddd;
+        border-radius: 4px;
+    }
+
+    .results {
+        margin-top: 15px;
+    }
+</style>
+
+<script>
+    function calculateOutput() {
+        const irradiance = parseFloat(document.getElementById('irradiance').value);
+        const temperature = parseFloat(document.getElementById('temperature').value);
+        const panelEfficiency = {{ pv.efficiency }};
+    const area = {{ pv.get_panel_area() }};
+    const tempCoeff = {{ pv.temperature_coefficient.strip('%') | float }};
+
+    // Calculate base output
+    const baseOutput = (irradiance * area * (panelEfficiency / 100));
+
+    // Calculate temperature effect
+    const tempDiff = temperature - 25; // Difference from STC
+    const tempEffect = 1 + (tempCoeff / 100 * tempDiff);
+
+    // Calculate final output
+    const finalOutput = baseOutput * tempEffect;
+
+    // Update display
+    document.getElementById('expected-output').textContent =
+        `${(finalOutput / 1000).toFixed(2)} kW`;
+    document.getElementById('temp-effect').textContent =
+        `${(tempEffect * 100).toFixed(1)}%`;
+  }
+
+    // Calculate initial values when page loads
+    document.addEventListener('DOMContentLoaded', calculateOutput);
+</script>
+{% endblock %}

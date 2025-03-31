@@ -1,0 +1,84 @@
+{% extends "base.html" %}
+
+{% block content %}
+<div class="battery-management">
+    <h1>Battery Management</h1>
+
+    <div class="available-batteries">
+        <h2>Available Battery Models</h2>
+        {% for battery_type in batteries %}
+        <div class="battery-card">
+            {% set battery = battery_factory.create_battery(battery_type) %}
+            <h3>{{ battery.model_name }}</h3>
+            <div class="battery-specs">
+                <p>Capacity: {{ battery.capacity }} GWh</p>
+                <p>Max Charge Rate: {{ battery.max_charge_rate }} GW</p>
+                <p>Max Discharge Rate: {{ battery.max_discharge_rate }} GW</p>
+                <p>Manufactured: {{ battery.manufactured_date }}</p>
+            </div>
+            <a href="{{ url_for('batteries.battery_detail', battery_type=battery_type) }}" class="btn btn-primary">
+                View Details
+            </a>
+        </div>
+        {% endfor %}
+    </div>
+
+    <div class="battery-instances">
+        <h2>Installed Batteries</h2>
+        <table class="battery-table">
+            <thead>
+                <tr>
+                    <th>ID</th>
+                    <th>Model</th>
+                    <th>Charge Level</th>
+                    <th>Status</th>
+                    <th>Health</th>
+                    <th>Next EOC</th>
+                    <th>Actions</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for instance in battery_instances %}
+                <tr>
+                    <td>{{ instance.id }}</td>
+                    <td>{{ instance.model_name }}</td>
+                    <td>{{ "%.1f"|format(instance.current_charge/instance.capacity*100) }}%</td>
+                    <td>{{ instance.status }}</td>
+                    <td>{{ "%.1f"|format(instance.health) }}%</td>
+                    <td>{{ instance.next_eoc.strftime('%Y-%m-%d %H:%M') if instance.next_eoc }}</td>
+                    <td>
+                        <button onclick="toggleStatus('{{ instance.id }}')">
+                            Toggle Online/Offline
+                        </button>
+                    </td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+</div>
+
+<style>
+    .battery-management {
+        padding: 20px;
+    }
+
+    .battery-card {
+        border: 1px solid #ccc;
+        padding: 15px;
+        margin: 10px;
+        border-radius: 5px;
+    }
+
+    .battery-table {
+        width: 100%;
+        border-collapse: collapse;
+    }
+
+    .battery-table th,
+    .battery-table td {
+        padding: 8px;
+        border: 1px solid #ddd;
+    }
+</style>
+{% endblock %}

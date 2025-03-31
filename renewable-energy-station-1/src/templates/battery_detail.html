@@ -1,0 +1,160 @@
+{% extends "base.html" %}
+
+{% block content %}
+<div class="battery-detail">
+    <h1>{{ battery.model_name }}</h1>
+
+    <div class="battery-info">
+        <section class="specs">
+            <h2>Specifications</h2>
+            <table>
+                <tr>
+                    <td>Capacity:</td>
+                    <td>{{ battery.capacity }} GWh</td>
+                </tr>
+                <tr>
+                    <td>Max Charge Rate:</td>
+                    <td>{{ battery.max_charge_rate }} GW</td>
+                </tr>
+                <tr>
+                    <td>Max Discharge Rate:</td>
+                    <td>{{ battery.max_discharge_rate }} GW</td>
+                </tr>
+                <tr>
+                    <td>Manufactured:</td>
+                    <td>{{ battery.manufactured_date }}</td>
+                </tr>
+                <tr>
+                    <td>EOC Voltage:</td>
+                    <td>{{ battery.eoc_voltage }}V</td>
+                </tr>
+                <tr>
+                    <td>Cycle Life:</td>
+                    <td>{{ battery.cycle_life }} cycles</td>
+                </tr>
+            </table>
+        </section>
+
+        <section class="operating-limits">
+            <h2>Operating Limits</h2>
+            <table>
+                <tr>
+                    <td>Min Safe Charge:</td>
+                    <td>{{ battery.min_safe_charge * 100 }}%</td>
+                </tr>
+                <tr>
+                    <td>Max Safe Charge:</td>
+                    <td>{{ battery.max_safe_charge * 100 }}%</td>
+                </tr>
+                <tr>
+                    <td>Operating Temperature:</td>
+                    <td>{{ battery.temperature_limits.min_operating }}°C to {{ battery.temperature_limits.max_operating
+                        }}°C</td>
+                </tr>
+                <tr>
+                    <td>Optimal Temperature:</td>
+                    <td>{{ battery.temperature_limits.optimal_min }}°C to {{ battery.temperature_limits.optimal_max }}°C
+                    </td>
+                </tr>
+            </table>
+        </section>
+
+        <section class="charge-curves">
+            <h2>Charge/Discharge Curves</h2>
+            <div class="curves">
+                <div class="curve">
+                    <h3>Charge Rate Curve</h3>
+                    <table>
+                        <tr>
+                            <th>Charge Level</th>
+                            <th>Rate Multiplier</th>
+                        </tr>
+                        {% for level, rate in battery.charge_rate_curve.items() %}
+                        <tr>
+                            <td>{{ (level * 100)|int }}%</td>
+                            <td>{{ (rate * 100)|int }}%</td>
+                        </tr>
+                        {% endfor %}
+                    </table>
+                </div>
+
+                <div class="curve">
+                    <h3>Discharge Rate Curve</h3>
+                    <table>
+                        <tr>
+                            <th>Charge Level</th>
+                            <th>Rate Multiplier</th>
+                        </tr>
+                        {% for level, rate in battery.discharge_rate_curve.items() %}
+                        <tr>
+                            <td>{{ (level * 100)|int }}%</td>
+                            <td>{{ (rate * 100)|int }}%</td>
+                        </tr>
+                        {% endfor %}
+                    </table>
+                </div>
+            </div>
+        </section>
+    </div>
+
+    <div class="actions">
+        <a href="{{ url_for('batteries.list_batteries') }}" class="btn btn-secondary">Back to Batteries</a>
+    </div>
+</div>
+
+<style>
+    .battery-detail {
+        max-width: 1200px;
+        margin: 0 auto;
+        padding: 20px;
+    }
+
+    .battery-info {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+        gap: 20px;
+        margin: 20px 0;
+    }
+
+    section {
+        border: 1px solid #ddd;
+        border-radius: 5px;
+        padding: 20px;
+    }
+
+    table {
+        width: 100%;
+        border-collapse: collapse;
+        margin: 10px 0;
+    }
+
+    td,
+    th {
+        padding: 8px;
+        border-bottom: 1px solid #ddd;
+    }
+
+    .curves {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+        gap: 20px;
+    }
+
+    .btn {
+        display: inline-block;
+        padding: 10px 20px;
+        border-radius: 4px;
+        text-decoration: none;
+        margin: 10px 0;
+    }
+
+    .btn-secondary {
+        background-color: #6c757d;
+        color: white;
+    }
+
+    .btn-secondary:hover {
+        background-color: #5a6268;
+    }
+</style>
+{% endblock %}
